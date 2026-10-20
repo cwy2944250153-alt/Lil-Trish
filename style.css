@@ -1,0 +1,194 @@
+/* 花蝶小径 v0.5：不显示弹窗、九宫格、全屏遮罩。
+   全部绘制在隔离的 ShadowRoot 内，仅真实花蝶按钮参与点击。 */
+:host {
+  all: initial;
+  display:block;
+  position:fixed;
+  inset:0;
+  z-index:1850;
+  pointer-events:none;
+  font-family:'MZ_Gufeng','KaiTi',serif;
+  color:#eadacc;
+  -webkit-tap-highlight-color:transparent;
+}
+*, *::before, *::after{box-sizing:border-box;}
+[hidden]{display:none !important;}
+button{padding:0;border:0;font:inherit;color:inherit;background:none;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+button:focus-visible{outline:2px solid #e9cfa8;outline-offset:2px;border-radius:9px;}
+.xyc-floral-scene{position:fixed;inset:0;pointer-events:none;overflow:visible;isolation:isolate;}
+/* 原作者配套美化的左垂花枝素材：不复用播放器牡丹；不拦截点按。 */
+.xyc-floral-branch{
+  position:fixed;
+  top:55px;left:-38px;
+  width:min(89vw,355px);
+  aspect-ratio:1038/1162;
+  background-size:contain;
+  background-position:top left;
+  background-repeat:no-repeat;
+  pointer-events:none;
+  opacity:.37;
+  transform:translate(-10px,-18px) scale(.78);
+  transform-origin:25% 0%;
+  filter:drop-shadow(0 8px 14px rgba(0,0,0,.62)) saturate(.87);
+  transition:transform .85s cubic-bezier(.17,.71,.28,1),opacity .7s;
+  z-index:0;
+}
+.xyc-floral-scene.open .xyc-floral-branch{
+  opacity:.47;
+  transform:translate(0,1px) scale(1.04);
+}
+/* v0.5: faint hanging vine / blossoms fill the CLOSED native toolbar band.
+   Pure decoration: its own asset (not the music player's peony), never captures taps.
+   Unobtrusive under the original row of butterflies. Hidden in expanded state. */
+.xyc-floral-top-ornament{
+  position:fixed;
+  top:27px;
+  left:0;
+  width:100vw;
+  height:41px;
+  z-index:1;
+  pointer-events:none !important;
+  background:url('./top_vine.svg') center center / 100% 100% no-repeat;
+  opacity:.48;
+  filter:saturate(.75) brightness(.91);
+  transform:translate3d(0,0,0);
+  transition:opacity .55s ease;
+}
+/* A small patch of translucent floral mist, never a solid UI overlay. */
+.xyc-floral-top-ornament::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse 65px 16px at 18% 67%,rgba(214,188,200,.12),transparent 90%),
+    radial-gradient(ellipse 86px 13px at 74% 50%,rgba(180,210,198,.10),transparent 90%);
+}
+.xyc-floral-scene.open .xyc-floral-top-ornament{opacity:0;}
+
+/* 收起：Mufy 式柔和花蝶簇，四个真实点击点；不设大型透明热区。 */
+.xyc-floral-cluster {
+  position:fixed;
+  left:0;top:0;
+  width:245px;height:292px;
+  transform:scale(var(--cluster-scale,1));
+  transform-origin:0 0;
+  pointer-events:none;
+  z-index:5;
+  transition:opacity .46s ease;
+}
+.xyc-rest-petal {
+  position:absolute;
+  width:64px;height:64px;
+  background-repeat:no-repeat;
+  background-size:contain;
+  background-position:center;
+  pointer-events:auto;
+  opacity:.61;
+  filter:brightness(.82) saturate(.66) drop-shadow(0 2px 4px rgba(0,0,0,.35));
+  transition:opacity .3s ease,filter .3s ease,transform .5s ease;
+  animation:xyc-rest-drift 7.8s ease-in-out infinite alternate;
+}
+.xyc-rest-petal img{width:100%;height:100%;object-fit:contain;opacity:.74;}
+.xyc-rest-petal:active,
+.xyc-rest-petal:focus-visible{opacity:.92;filter:brightness(.98) saturate(.85);}
+.xyc-rest-petal.rest-a{left:23px;top:126px;width:58px;height:59px;animation-delay:-1.8s;}
+.xyc-rest-petal.rest-b{left:111px;top:165px;width:61px;height:62px;animation-delay:-4.3s;}
+.xyc-rest-petal.rest-c{left:69px;top:223px;width:60px;height:62px;animation-delay:-.4s;}
+.xyc-rest-petal.rest-flower{left:173px;top:194px;width:50px;height:50px;opacity:.43;animation-delay:-5.4s;}
+.xyc-floral-scene.open .xyc-floral-cluster{opacity:.36;}
+.xyc-floral-scene.open .xyc-rest-petal{pointer-events:none;}
+@keyframes xyc-rest-drift{
+  0%,100%{transform:translate(0,0) rotate(-4deg);}
+  46%{transform:translate(5px,-6px) rotate(5deg);}
+  78%{transform:translate(-3px,3px) rotate(-2deg);}
+}
+.xyc-floral-nodes{position:fixed;inset:0;pointer-events:none;z-index:4;}
+.xyc-floral-node{
+  position:fixed;
+  width:88px;height:91px;
+  margin:-33px 0 0 -44px;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  pointer-events:none;
+  visibility:hidden;
+  opacity:0;
+  transform:translate(var(--from-x,0px),var(--from-y,0px)) rotate(var(--angle,0deg)) scale(.18);
+  transform-origin:50% 35%;
+  transition:opacity .55s ease,transform 1.15s cubic-bezier(.17,.64,.18,1.0),visibility 0s linear 1.15s;
+  z-index:4;
+}
+.xyc-floral-scene.open .xyc-floral-node{
+  visibility:visible;
+  pointer-events:auto;
+  opacity:.88;
+  transform:translate(0,0) rotate(var(--angle,0deg)) scale(1);
+  transition-delay:calc(var(--i,0)*57ms),calc(var(--i,0)*57ms),0s;
+}
+.xyc-floral-art{
+  display:block;width:56px;height:52px;flex:0 0 auto;
+  background-repeat:no-repeat;background-size:contain;background-position:center;
+  filter:brightness(.90) saturate(.82) drop-shadow(0 2px 3px rgba(0,0,0,.55));
+  transform-origin:center;
+  animation:xyc-small-flutter 6.4s ease-in-out infinite alternate;
+  animation-delay:calc(var(--i,0)*-.71s);
+}
+.xyc-floral-node.butterfly .xyc-floral-art{animation-name:xyc-small-flutter,xyc-soft-flap;animation-duration:6.4s,.54s;animation-iteration-count:infinite,infinite;animation-direction:alternate,alternate;}
+.xyc-flower-img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6));}
+/* 和图片融成一体的淡标签，而不是黑色圆角胶囊。 */
+.xyc-floral-label{
+  position:relative;display:block;
+  max-width:96px;white-space:nowrap;
+  padding:2px 3px 0;
+  font-size:12px;font-weight:400;line-height:1.35;letter-spacing:.8px;
+  color:#f3dfcf;
+  text-align:center;
+  text-shadow:0 2px 5px #070406,0 0 2px #060303,0 -1px 5px #14080e;
+  opacity:0;
+  transform:translateY(-7px);
+  transition:opacity .24s,transform .35s;
+  pointer-events:none;
+}
+.xyc-floral-scene.open .xyc-floral-label{opacity:.84;transform:translateY(0);transition-delay:.22s;}
+.xyc-floral-node:active .xyc-floral-art{filter:brightness(1.3) drop-shadow(0 2px 7px #b19a9a);}
+.xyc-floral-pager{
+  position:fixed;width:78px;height:89px;margin:-34px 0 0 -40px;
+  display:flex;flex-direction:column;align-items:center;pointer-events:none;opacity:0;visibility:hidden;
+  transition:opacity .2s,visibility .2s;
+}
+.xyc-floral-pager img{width:51px;height:51px;object-fit:contain;}
+.xyc-floral-scene.open .xyc-floral-pager:not([hidden]){pointer-events:auto;visibility:visible;opacity:1;}
+.xyc-floral-pager .xyc-floral-label{opacity:1;transform:none;}
+.xyc-floral-hint{
+  position:fixed;bottom:83px;left:50%;transform:translateX(-50%) translateY(8px);
+  max-width:85vw;white-space:nowrap;padding:7px 11px;
+  border-radius:20px;border:1px solid rgba(214,175,164,.28);
+  background:rgba(19,12,17,.88);font-size:11px;letter-spacing:.5px;
+  opacity:0;transition:opacity .16s,transform .2s;z-index:20;pointer-events:none;
+}
+.xyc-floral-hint.show{opacity:1;transform:translateX(-50%) translateY(0);}
+@keyframes xyc-small-flutter{0%{translate:-5px 2px;rotate:-8deg;}47%{translate:5px -8px;rotate:6deg;}100%{translate:-2px 2px;rotate:-4deg;}}
+@keyframes xyc-soft-flap{0%,100%{scale:1 1;}50%{scale:.82 1.05;}}
+@media(max-width:375px){.xyc-floral-node{width:77px;margin-left:-39px;}.xyc-floral-art{width:49px;height:47px;}.xyc-floral-label{font-size:11px;}}
+@media(prefers-reduced-motion:reduce){
+  .xyc-rest-petal,.xyc-floral-art{animation:none!important;}
+  .xyc-floral-branch,.xyc-floral-node,.xyc-floral-label,.xyc-floral-cluster{transition-duration:.01ms!important;}
+}
+
+/* v0.6: 顶栏花影已经移到 v24 主题，由主题绘制；避免 v0.5 藤蔓重复下沉。 */
+.xyc-floral-top-ornament { display: none !important; }
+
+/* TauriTavern v0.9：只有展开花蝶导航时才显示字体导入按钮。 */
+.xyc-tt-font-import {
+  position:fixed;right:15px;bottom:105px;z-index:22;
+  pointer-events:none;visibility:hidden;opacity:0;
+  background:rgba(36,23,31,.94);color:#e6cba8;
+  border:1px solid rgba(186,152,112,.68);border-radius:8px;
+  font-size:12px;letter-spacing:1.2px;line-height:1.5;
+  padding:6px 10px;
+  box-shadow:0 5px 18px rgba(0,0,0,.75);
+  transition:opacity .2s ease;
+}
+.xyc-floral-scene.open .xyc-tt-font-import {
+  pointer-events:auto;visibility:visible;opacity:.92;
+}
+.xyc-tt-font-import:active {opacity:1;}

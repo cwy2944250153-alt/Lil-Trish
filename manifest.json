@@ -1,0 +1,11 @@
+{
+  "display_name": "花蝶小径 · 徐引翠 v29 / TauriTavern（含字体导入）",
+  "loading_order": 90,
+  "requires": [],
+  "optional": [],
+  "dependencies": [],
+  "js": "index.js",
+  "author": "Private-use UI prototype",
+  "version": "0.9.0-tt",
+  "minimum_client_version": "1.12.0"
+}
